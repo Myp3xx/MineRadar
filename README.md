@@ -1,7 +1,6 @@
 
 # <img src="images/icon.png" width="32"> MineRadar
 ![GitHub Repo stars](https://img.shields.io/github/stars/Myp3xx/MineRadar)
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/Myp3xx/MineRadar/total)
 
 
 Minecraft server finder/scanner written in Python inspired by Wurst Client ServerFinder.
