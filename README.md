@@ -7,7 +7,7 @@ Minecraft server finder/scanner written in Python inspired by Wurst Client Serve
 ![Screenshot](images/screenshot.png)
 
 ## Installation
-**There are Windows binaries avaiable if you don't want to install stuff below**
+**There are Windows binaries avaliable if you don't want to install stuff below**
 ### Requirements
 - Python 3.9+
 - PyQt6
