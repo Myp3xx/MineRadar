@@ -1,7 +1,7 @@
-import GithubButton from 'vue-github-button'
-<github-button href="https://github.com/Myp3xx/MineRadar" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" aria-label="Star Myp3xx/MineRadar on GitHub">Star</github-button>
 
 # <img src="images/icon.png" width="32"> MineRadar
+![GitHub Repo stars](https://img.shields.io/github/stars/Myp3xx/MineRadar)
+
 Minecraft server finder/scanner written in Python inspired by Wurst Client ServerFinder.
 
 ![Screenshot](images/screenshot.png)
