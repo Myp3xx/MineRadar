@@ -15,7 +15,7 @@ Minecraft server finder/scanner written in Python inspired by Wurst Client Serve
 
 ### Install requirements
 ```bash
-pip install PyQt6 msctatus
+pip install PyQt6 mcstatus
 ```
 
 ## Running
