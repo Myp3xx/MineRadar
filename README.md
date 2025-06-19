@@ -20,6 +20,7 @@ pip install PyQt6 mcstatus
 
 ## Running
 Launch **MineRadar.pyw** or run `python MineRadar.pyw`
+
 Windows binaries are available in Releases
 
 ## TODO
