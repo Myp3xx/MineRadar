@@ -21,3 +21,10 @@ pip install PyQt6 mcstatus
 ## Running
 Launch **MineRadar.pyw** or run `python MineRadar.pyw`
 Windows binaries are available in Releases
+
+## TODO
+- [ ] Themes
+- [ ] Logging
+- [ ] Saving results to file
+- [ ] Filters by version, core, offline Aternos servers, etc
+- [ ] Server icons
