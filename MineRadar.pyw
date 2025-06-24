@@ -7,11 +7,15 @@ import base64
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QLineEdit, QPushButton, QProgressBar,
-    QListWidget, QListWidgetItem, QSpinBox, QSizePolicy
+    QListWidget, QListWidgetItem, QSpinBox, QSizePolicy,
+    QDialog, QTextEdit, QMenu
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QObject, QSize, QTimer, QByteArray
 from PyQt6.QtGui import QColor, QIcon, QPixmap
 from mcstatus import JavaServer
+
+app_name = "MineRadar"
+version_number = "v1.1"
 
 def mc_colors_to_html(text):
     color_map = {
@@ -157,7 +161,7 @@ class Worker(QObject):
 class ServerFinder(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("MineRadar")
+        self.setWindowTitle(f"{app_name}")
 
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
@@ -212,6 +216,7 @@ class ServerFinder(QWidget):
 
         self.result_list = QListWidget()
         self.result_list.itemClicked.connect(self.on_item_clicked)
+        self.result_list.mousePressEvent = self.mouse_right_click
         self.layout.addWidget(self.result_list)
 
         self.status_layout = QHBoxLayout()
@@ -349,6 +354,56 @@ class ServerFinder(QWidget):
         self._is_searching = False
         self.search_button.setText("🔍 Search")
 
+    def mouse_right_click(self, event):
+        if event.button() == Qt.MouseButton.RightButton:
+            item = self.result_list.itemAt(event.position().toPoint())
+            if item:
+                ip_port = item.data(Qt.ItemDataRole.UserRole)
+                self.show_server_details(ip_port)
+        else:
+            super(QListWidget, self.result_list).mousePressEvent(event)
+
+
+    def show_server_details(self, ip_port):
+        try:
+            server = JavaServer.lookup(ip_port)
+            status = server.status()
+        except Exception as e:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Error", f"Failed to fetch server details:\n{e}")
+            return
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Server Info")
+        dialog.setMinimumSize(400, 300)
+        layout = QVBoxLayout(dialog)
+
+        info_text = QTextEdit()
+        info_text.setReadOnly(True)
+        motd1 = status.description
+        if isinstance(motd1, dict):
+            motd1 = str(motd1)
+        motd_html = mc_colors_to_html(motd1 if isinstance(motd1, str) else "")
+        info_text.setHtml(
+            f"<b><span style='color:#e64553'>Address:</span></b> {ip_port}<br>"
+            f"<b><span style='color:#fe640b'>Version:</span></b> {status.version.name}<br>"
+            f"<b><span style='color:#04a5e5'>Players:</span></b> {status.players.online}/{status.players.max}<br>"
+            f"<b><span style='color:#40a02b'>Ping:</span></b> {int(status.latency)} ms<br><br>"
+            f"<b><span style='color:#7287fd'>MOTD:</span></b><br>{motd_html}"
+        )
+        layout.addWidget(info_text)
+
+        if status.players.sample:
+            player_names = [player.name for player in status.players.sample]
+            players_html = "<br>".join(f"{name}" for name in player_names)
+            info_text.append(f"<br><b>Players Online:</b><br>{players_html}")
+
+        close_btn = QPushButton("OK")
+        close_btn.clicked.connect(dialog.accept)
+        layout.addWidget(close_btn, alignment=Qt.AlignmentFlag.AlignRight)
+
+        dialog.exec()
+
     def show_help(self):
         from PyQt6.QtWidgets import QMessageBox
         QMessageBox.about(
@@ -366,7 +421,10 @@ class ServerFinder(QWidget):
                 "For example, with 192.168.0.100 and deviation ±2, the scanner will check IPs from 192.168.0.98 to 192.168.0.102.<br><br>"
 
                 "<b>Max threads</b>:<br>"
-                "The number of threads used for parallel scanning. Higher values increase speed but also CPU load."
+                "The number of threads used for parallel scanning. Higher values increase speed but also CPU load.<br><br>"
+
+                "Left Mouse Button - copy IP:Port<br>"
+                "Right Mouse Button - detailed server information with player list"
             )
         )
 
@@ -376,7 +434,7 @@ class ServerFinder(QWidget):
             self,
             "About",
             (
-                "<h2><b>MineRadar</b> v0.1</h2><br>"
+                f"<h2><b>{app_name}</b> {version_number}</h2><br>"
 
                 "Made with <b><span style='color:#ff0000'>&lt;3</span></b> by <b>Myp3xx</b><br>"
                 "Powered by <a href='https://pypi.org/project/PyQt6'>PyQt6</a> and <a href='https://pypi.org/project/mcstatus'>mcstatus</a>.<br><br>"
@@ -389,8 +447,7 @@ class ServerFinder(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
-    # that's fucking hilarious
-    app_icon = b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAldJREFUOI1tkr1v01AUxX/v2U6cryZ12yRAKQghsSKEKoEqmo2ZhQGJigWxMPMfMZe/ASFUASpMUIZWUNKCkrjEiRM7/noML7EA9Sz3Dffcc+65Tzx7cU/JXwZZO0UEAoAsyKhfLbLA5DhmdBAC0O5UGJ/ErN60AZAAqp7l5FrLQpYkAN63GcN3s5y4wIIMYKqvAm6ofMDhrgvA7GIZqyWZJhHiALwu1K5rV4NPIemhovnARsoNcnLv7Yjm3SWMFYmxKpicRgCUGgUA0oHC7ya5em83RGbH4O75uHs+hpR8f+3mzaWWBcA0iai1i4ReDIBQAvOaXlPKDbDXLNIsI80ykiQFoHt0hncSUDBMRqcBf0MdKdSRwkDoEMN+TKWl92uUywxPplzZXCHyUgbdMQDHH84Yjqb4X3SosyRhqmKku+eTZpk+37waQvLj/W+KygSlVQ0pkQi8MMAwjNyNjJMkVw/jhHGg7100DbxpgBSCtVoNBFxyluns75CmKVJIVKSQtQslwn5M0Ito1mtUbT0sSlLa9SWqdhHX9+ns7+SqPx/fwTIklWIBKTxQSvvseWP8cMa606BgGpwOh9x6+zAndh9t5u+ipS8kdXAlnGqFjVWHdafBLEnZ/rjDZWdZp/78PudhMov0ACll7sKdTCkV9PTBk61ziQCu72sH9tyKEIL+2GelUqY/9nlz+yUAn7d3/6kHnVe6H/17xdPtLSWEQCnFosZphlKKURjSXKoRJwmZUtiWRcE0OfMnONUKCjD/JwshckdLto0fhlRte66n4VQrcxfwB5HjDHL54TF9AAAAAElFTkSuQmCC'
+    app_icon = b'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKlJREFUOI1j/B8a+p8BChhXr2ZABv+fZEPEZaaiiPf+70FSBDGALNz7v+c/EwOFgBFqGtmAYheQZABK4JFiwJUHQXB2yMwQVAP+h4bi1AiLRgYGBob6NkOsLsLqgv/TEOyZnQ54XceEnHiQXTMzCq8+BgYGBoZixhJMF8w0NiasE9kFyByYaxizoHxoEtZRWAe3ER1QnpDwxQIhgDMWSAEsDAyI0CcnOwMAn+tEiGSOL2YAAAAASUVORK5CYII='
 
     pixmap = QPixmap()
     pixmap.loadFromData(QByteArray.fromBase64(app_icon))
